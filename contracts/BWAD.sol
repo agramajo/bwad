@@ -146,15 +146,15 @@ contract BWAD is Context, IERC20, Ownable, ReentrancyGuard {
 	mapping (address => bool) private _isExcludedFromReward;
 	address[] private _excludedFromReward;
 
-	address DEVELOPMENT_ADDRESS = 0xc0516A5Ef21Fa607f6c733B3bFa10FDAAf219c1B;
+	address DEVELOPMENT_ADDRESS = 0xc0d3077c375A719717D9c84b500631C825e78dF7;
 
 	uint256 private constant MAX = ~uint256(0); 
 	uint256 private _tTotal = 100000000 * 10**9; // 100;
 	uint256 private _rTotal = (MAX - (MAX % _tTotal));
 	uint256 private _tHODLrRewardsTotal;
 
-	string private _name = "BWAD";
-	string private _symbol = "BWAD";
+	string private _name = "BWAD1";
+	string private _symbol = "BWAD1";
 	uint8 private _decimals = 9;
 	
 	uint256 public _rewardFee = 5;
