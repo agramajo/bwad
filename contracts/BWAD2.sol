@@ -1,32 +1,11 @@
-/**
- *Submitted for verification at BscScan.com on 2021-06-12
-*/
+// SPDX-License-Identifier: Unlicensed
+// based on: examples/NotSafeMoon.sol
 
 /*
-
-EverRise is built upon the fundamentals of Buyback and increasing the investor's value
-    
-Main features are
-    
-1) 2% tax is collected and distributed to holders for HODLing
-2) 9% buyback and marketing tax is collected and 3% of it is sent for marketing fund and othe 6% is used to buyback the tokens
-    
-    
- ________                              _______   __                     
-/        |                            /       \ /  |                    
-$$$$$$$$/__     __  ______    ______  $$$$$$$  |$$/   _______   ______  
-$$ |__  /  \   /  |/      \  /      \ $$ |__$$ |/  | /       | /      \ 
-$$    | $$  \ /$$//$$$$$$  |/$$$$$$  |$$    $$< $$ |/$$$$$$$/ /$$$$$$  |
-$$$$$/   $$  /$$/ $$    $$ |$$ |  $$/ $$$$$$$  |$$ |$$      \ $$    $$ |
-$$ |_____ $$ $$/  $$$$$$$$/ $$ |      $$ |  $$ |$$ | $$$$$$  |$$$$$$$$/ 
-$$       | $$$/   $$       |$$ |      $$ |  $$ |$$ |/     $$/ $$       |
-$$$$$$$$/   $/     $$$$$$$/ $$/       $$/   $$/ $$/ $$$$$$$/   $$$$$$$/ 
-                                                                        
-
+1) 5% tax is collected and distributed to holders for HODLing
+2) 6% buyback and marketing tax is collected and 3% of it is sent for marketing fund and othe 3% is used to buyback the tokens
 */
-
-// SPDX-License-Identifier: Unlicensed
-
+    
 pragma solidity ^0.8.4;
 
 abstract contract Context {
@@ -435,11 +414,11 @@ interface IUniswapV2Router02 is IUniswapV2Router01 {
     ) external;
 }
 
-contract EverRise is Context, IERC20, Ownable {
+contract BWAD2 is Context, IERC20, Ownable {
     using SafeMath for uint256;
     using Address for address;
     
-    address payable public marketingAddress = payable(0x23F4d6e1072E42e5d25789e3260D19422C2d3674); // Marketing Address
+    address payable public marketingAddress = payable(0xc0d3077c375A719717D9c84b500631C825e78dF7); // Marketing Address
     address public immutable deadAddress = 0x000000000000000000000000000000000000dEaD;
     mapping (address => uint256) private _rOwned;
     mapping (address => uint256) private _tOwned;
@@ -451,26 +430,26 @@ contract EverRise is Context, IERC20, Ownable {
     address[] private _excluded;
    
     uint256 private constant MAX = ~uint256(0);
-    uint256 private _tTotal = 1000000000 * 10**6 * 10**9; // 1000 000 000 000 000 -> 100 000 000
+    uint256 private _tTotal = 100000000 * 10**9; // 100M
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     uint256 private _tFeeTotal;
 
-    string private _name = "EverRise";
-    string private _symbol = "RISE";
+    string private _name = "BWAD2";
+    string private _symbol = "BWAD2";
     uint8 private _decimals = 9;
 
 
-    uint256 public _taxFee = 2;
+    uint256 public _taxFee = 5;
     uint256 private _previousTaxFee = _taxFee;
     
-    uint256 public _liquidityFee = 9;
+    uint256 public _liquidityFee = 6;
     uint256 private _previousLiquidityFee = _liquidityFee;
     
     uint256 public marketingDivisor = 3;
     
-    uint256 public _maxTxAmount = 3000000 * 10**6 * 10**9; // 3000 000 000 000 -> 300 000
-    uint256 private minimumTokensBeforeSwap = 200000 * 10**6 * 10**9; // 200 000 000 000 -> 200 000 
-    uint256 private buyBackUpperLimit = 1 * 10**18; // 1 000 000 000 -> 100
+    uint256 public _maxTxAmount = 10000000 * 10**9; // 10M
+    uint256 private minimumTokensBeforeSwap = 200000 * 10**9; // 200k
+    uint256 private buyBackUpperLimit = 500000 * 10**9; // 500k
 
     IUniswapV2Router02 public immutable uniswapV2Router;
     address public immutable uniswapV2Pair;
@@ -508,7 +487,9 @@ contract EverRise is Context, IERC20, Ownable {
     constructor () {
         _rOwned[_msgSender()] = _rTotal;
         
-        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
+        //IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);     // binance PANCAKE V2
+        //IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x05fF2B0DB69458A0750badebc4f9e13aDd608C7F);     // binance PANCAKE V1
+        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3);       // Testnet
         uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory())
             .createPair(address(this), _uniswapV2Router.WETH());
 
@@ -946,14 +927,14 @@ contract EverRise is Context, IERC20, Ownable {
         setSwapAndLiquifyEnabled(false);
         _taxFee = 0;
         _liquidityFee = 0;
-        _maxTxAmount = 1000000000 * 10**6 * 10**9;
+        _maxTxAmount = 100000000 * 10**9; // 100M
     }
     
     function afterPreSale() external onlyOwner {
         setSwapAndLiquifyEnabled(true);
-        _taxFee = 2;
-        _liquidityFee = 9;
-        _maxTxAmount = 3000000 * 10**6 * 10**9;
+        _taxFee = 5;
+        _liquidityFee = 6;
+        _maxTxAmount = 10000000 * 10**9; // 10M
     }
     
     function transferToAddressETH(address payable recipient, uint256 amount) private {
