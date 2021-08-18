@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Unlicensed
-// based on: examples/NotSafeMoon.sol
+// based on: examples/EverRise.sol
 
 /*
 1) 5% tax is collected and distributed to holders for HODLing
-2) 6% buyback and marketing tax is collected and 3% of it is sent for marketing fund and othe 3% is used to buyback the tokens
+2) 6% LP and marketing
 */
     
 pragma solidity ^0.8.4;
@@ -31,7 +31,6 @@ interface IERC20 {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
     
-
 }
 
 library SafeMath {
@@ -369,8 +368,6 @@ interface IUniswapV2Router01 {
     function getAmountsIn(uint amountOut, address[] calldata path) external view returns (uint[] memory amounts);
 }
 
-
-
 // pragma solidity >=0.6.2;
 
 interface IUniswapV2Router02 is IUniswapV2Router01 {
@@ -438,7 +435,6 @@ contract BWAD2 is Context, IERC20, Ownable {
     string private _symbol = "BWAD2";
     uint8 private _decimals = 9;
 
-
     uint256 public _taxFee = 5;
     uint256 private _previousTaxFee = _taxFee;
     
@@ -448,16 +444,13 @@ contract BWAD2 is Context, IERC20, Ownable {
     uint256 public marketingDivisor = 3;
     
     uint256 public _maxTxAmount = 10000000 * 10**9; // 10M
-    uint256 private minimumTokensBeforeSwap = 200000 * 10**9; // 200k
-    uint256 private buyBackUpperLimit = 500000 * 10**9; // 500k
+    uint256 private minimumTokensBeforeSwap = 100000 * 10**9; // 100k
 
     IUniswapV2Router02 public immutable uniswapV2Router;
     address public immutable uniswapV2Pair;
     
     bool inSwapAndLiquify;
     bool public swapAndLiquifyEnabled = false;
-    bool public buyBackEnabled = true;
-
     
     event RewardLiquidityProviders(uint256 tokenAmount);
     event BuyBackEnabledUpdated(bool enabled);
@@ -565,10 +558,6 @@ contract BWAD2 is Context, IERC20, Ownable {
         return minimumTokensBeforeSwap;
     }
     
-    function buyBackUpperLimitAmount() public view returns (uint256) {
-        return buyBackUpperLimit;
-    }
-    
     function deliver(uint256 tAmount) public {
         address sender = _msgSender();
         require(!_isExcluded[sender], "Excluded addresses cannot call this function");
@@ -647,14 +636,6 @@ contract BWAD2 is Context, IERC20, Ownable {
                 contractTokenBalance = minimumTokensBeforeSwap;
                 swapTokens(contractTokenBalance);    
             }
-	        uint256 balance = address(this).balance;
-            if (buyBackEnabled && balance > uint256(1 * 10**18)) {
-                
-                if (balance > buyBackUpperLimit)
-                    balance = buyBackUpperLimit;
-                
-                buyBackTokens(balance.div(100));
-            }
         }
         
         bool takeFee = true;
@@ -675,14 +656,6 @@ contract BWAD2 is Context, IERC20, Ownable {
 
         //Send to Marketing address
         transferToAddressETH(marketingAddress, transferredBalance.div(_liquidityFee).mul(marketingDivisor));
-        
-    }
-    
-
-    function buyBackTokens(uint256 amount) private lockTheSwap {
-    	if (amount > 0) {
-    	    swapETHForTokens(amount);
-	    }
     }
     
     function swapTokensForEth(uint256 tokenAmount) private {
@@ -705,22 +678,6 @@ contract BWAD2 is Context, IERC20, Ownable {
         emit SwapTokensForETH(tokenAmount, path);
     }
     
-    function swapETHForTokens(uint256 amount) private {
-        // generate the uniswap pair path of token -> weth
-        address[] memory path = new address[](2);
-        path[0] = uniswapV2Router.WETH();
-        path[1] = address(this);
-
-      // make the swap
-        uniswapV2Router.swapExactETHForTokensSupportingFeeOnTransferTokens{value: amount}(
-            0, // accept any amount of Tokens
-            path,
-            deadAddress, // Burn address
-            block.timestamp.add(300)
-        );
-        
-        emit SwapETHForTokens(amount, path);
-    }
     
     function addLiquidity(uint256 tokenAmount, uint256 ethAmount) private {
         // approve token transfer to cover all possible scenarios
@@ -905,10 +862,6 @@ contract BWAD2 is Context, IERC20, Ownable {
         minimumTokensBeforeSwap = _minimumTokensBeforeSwap;
     }
     
-     function setBuybackUpperLimit(uint256 buyBackLimit) external onlyOwner() {
-        buyBackUpperLimit = buyBackLimit * 10**18;
-    }
-
     function setMarketingAddress(address _marketingAddress) external onlyOwner() {
         marketingAddress = payable(_marketingAddress);
     }
@@ -916,11 +869,6 @@ contract BWAD2 is Context, IERC20, Ownable {
     function setSwapAndLiquifyEnabled(bool _enabled) public onlyOwner {
         swapAndLiquifyEnabled = _enabled;
         emit SwapAndLiquifyEnabledUpdated(_enabled);
-    }
-    
-    function setBuyBackEnabled(bool _enabled) public onlyOwner {
-        buyBackEnabled = _enabled;
-        emit BuyBackEnabledUpdated(_enabled);
     }
     
     function prepareForPreSale() external onlyOwner {
